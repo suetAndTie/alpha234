@@ -8,7 +8,7 @@ import logging
 
 class Game:
 
-	def __init__(self):		
+	def __init__(self):
 		self.currentPlayer = 1
 		self.gameState = GameState(np.array([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], dtype=np.int), 1)
 		self.actionSpace = np.array([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], dtype=np.int)
@@ -212,7 +212,7 @@ class GameState():
 	def takeAction(self, action):
 		newBoard = np.array(self.board)
 		newBoard[action]=self.playerTurn
-		
+
 		newState = GameState(newBoard, -self.playerTurn)
 
 		value = 0
@@ -222,15 +222,14 @@ class GameState():
 			value = newState.value[0]
 			done = 1
 
-		return (newState, value, done) 
-
-
-
+		return (newState, value, done)
 
 	def render(self, logger):
 		for r in range(6):
 			logger.info([self.pieces[str(x)] for x in self.board[7*r : (7*r + 7)]])
 		logger.info('--------------')
 
-
-
+	def get_visual_state(self):
+		for r in range(6):
+			print([self.pieces[str(x)] for x in self.board[7*r : (7*r + 7)]])
+		print('--------------')

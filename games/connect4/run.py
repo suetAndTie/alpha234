@@ -7,11 +7,11 @@ def main():
 
     done = False
     while not done:
-        # game.gameState.render()
+        game.gameState.get_visual_state()
         next_action = agents[game.currentPlayer].choose_action(game)
-        print(next_action)
+        # next_action)
         next_state, value, done, info = game.step(next_action)
-    # game.gameState.render()
+    game.gameState.get_visual_state()
 
 if __name__ == '__main__':
     main()
