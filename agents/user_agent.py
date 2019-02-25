@@ -1,4 +1,4 @@
-class User():
+class User:
     # def __init__(self, name, state_size, action_size):
     #     pass
 
