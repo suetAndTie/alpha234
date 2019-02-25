@@ -1,8 +1,7 @@
 import numpy as np
-import game
 import random
 
-class RandomAgent:
+class RandomAgent():
 
     # def __init__(self):
     #

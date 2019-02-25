@@ -1,2 +1,9 @@
-*.pyc
 *.pdf
+
+# Python General
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Mac General
+.DS_Store
