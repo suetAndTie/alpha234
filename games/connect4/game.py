@@ -206,9 +206,6 @@ class GameState():
 		tmp = self.value
 		return (tmp[1], tmp[2])
 
-
-
-
 	def takeAction(self, action):
 		newBoard = np.array(self.board)
 		newBoard[action]=self.playerTurn
