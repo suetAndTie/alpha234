@@ -7,7 +7,7 @@ class MCTS():
     This class handles the MCTS tree.
     """
 
-    def __init__(self, game, nnet, args):
+    def __init__(self, game, nnet, args, lock=None):
         self.game = game
         self.nnet = nnet
         self.args = args
@@ -18,6 +18,8 @@ class MCTS():
 
         self.Es = {}        # stores game.getGameEnded ended for board s
         self.Vs = {}        # stores game.getValidMoves for board s
+
+        self.lock = lock    # Store multiprocessing lock for running the model
 
     def getActionProb(self, canonicalBoard, temp=1):
         """
@@ -71,7 +73,13 @@ class MCTS():
 
         if s not in self.Ps:
             # leaf node
-            self.Ps[s], v = self.nnet.predict(canonicalBoard)
+            if self.lock is not None:
+                # Lock for multiprocessing
+                with lock:
+                    self.Ps[s], v = self.nnet.predict(canonicalBoard)
+            else:
+                self.Ps[s], v = self.nnet.predict(canonicalBoard)
+
             valids = self.game.getValidMoves(canonicalBoard, 1)
             self.Ps[s] = self.Ps[s]*valids      # masking invalid moves
             sum_Ps_s = np.sum(self.Ps[s])

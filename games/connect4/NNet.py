@@ -12,8 +12,7 @@ import random
 import numpy as np
 import math
 import sys
-sys.path.append('../../')
-from utils import *
+from utils.util import AverageMeter
 from pytorch_classification.utils import Bar, AverageMeter
 from NeuralNet import NeuralNet
 
@@ -36,12 +35,13 @@ args = dotdict({
 })
 
 class NNetWrapper(NeuralNet):
-    def __init__(self, game):
+    def __init__(self, game, args):
+        self.args = args
         self.nnet = onnet(game, args)
         self.board_x, self.board_y = game.getBoardSize()
         self.action_size = game.getActionSize()
 
-        if args.cuda:
+        if self.args.cuda:
             self.nnet.cuda()
 
     def train(self, examples):
@@ -50,7 +50,7 @@ class NNetWrapper(NeuralNet):
         """
         optimizer = optim.Adam(self.nnet.parameters())
 
-        for epoch in range(args.epochs):
+        for epoch in range(self.args.epochs):
             print('EPOCH ::: ' + str(epoch+1))
             self.nnet.train()
             data_time = AverageMeter()
@@ -59,18 +59,18 @@ class NNetWrapper(NeuralNet):
             v_losses = AverageMeter()
             end = time.time()
 
-            bar = Bar('Training Net', max=int(len(examples)/args.batch_size))
+            bar = Bar('Training Net', max=int(len(examples)/self.args.batch_size))
             batch_idx = 0
 
-            while batch_idx < int(len(examples)/args.batch_size):
-                sample_ids = np.random.randint(len(examples), size=args.batch_size)
+            while batch_idx < int(len(examples)/self.args.batch_size):
+                sample_ids = np.random.randint(len(examples), size=self.args.batch_size)
                 boards, pis, vs = list(zip(*[examples[i] for i in sample_ids]))
                 boards = torch.FloatTensor(np.array(boards).astype(np.float64))
                 target_pis = torch.FloatTensor(np.array(pis))
                 target_vs = torch.FloatTensor(np.array(vs).astype(np.float64))
 
                 # predict
-                if args.cuda:
+                if self.args.cuda:
                     boards, target_pis, target_vs = boards.contiguous().cuda(), target_pis.contiguous().cuda(), target_vs.contiguous().cuda()
 
                 # measure data loading time
@@ -99,7 +99,7 @@ class NNetWrapper(NeuralNet):
                 # plot progress
                 bar.suffix  = '({batch}/{size}) Data: {data:.3f}s | Batch: {bt:.3f}s | Total: {total:} | ETA: {eta:} | Loss_pi: {lpi:.4f} | Loss_v: {lv:.3f}'.format(
                             batch=batch_idx,
-                            size=int(len(examples)/args.batch_size),
+                            size=int(len(examples)/self.args.batch_size),
                             data=data_time.avg,
                             bt=batch_time.avg,
                             total=bar.elapsed_td,
@@ -120,7 +120,7 @@ class NNetWrapper(NeuralNet):
 
         # preparing input
         board = torch.FloatTensor(board.astype(np.float64))
-        if args.cuda: board = board.contiguous().cuda()
+        if self.args.cuda: board = board.contiguous().cuda()
         board = board.view(1, self.board_x, self.board_y)
         self.nnet.eval()
         with torch.no_grad():
@@ -151,6 +151,6 @@ class NNetWrapper(NeuralNet):
         filepath = os.path.join(folder, filename)
         if not os.path.exists(filepath):
             raise("No model in path {}".format(filepath))
-        map_location = None if args.cuda else 'cpu'
+        map_location = None if self.args.cuda else 'cpu'
         checkpoint = torch.load(filepath, map_location=map_location)
         self.nnet.load_state_dict(checkpoint['state_dict'])

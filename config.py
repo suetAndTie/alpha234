@@ -15,15 +15,24 @@ class Config():
     numMCTSSims = 25
     arenaCompare = 40
     cpuct = 1
+    numItersForTrainExamplesHistory = 20
 
     # Hardware
     num_workers = cpu_count()
 
-    # Models
+    # Model
+    lr = 0.001
+    dropout = 0.3
+    epochs = 10
+    batch_size = 64
+    cuda = torch.cuda.is_available()
+    num_channels = 512
+
+
+    # Model Loading
     checkpoint = './saved/'
     load_model = False
     load_folder_file = ('/dev/models/8x100x50','best.pth.tar')
-    numItersForTrainExamplesHistory = 20
 
     # Logging
     log_dir = 'saved/runs'

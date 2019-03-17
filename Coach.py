@@ -12,9 +12,11 @@ from tqdm import tqdm
 import time, os, sys
 from pickle import Pickler, Unpickler
 from random import shuffle
+import multiprocessing
 from concurrent.futures import ProcessPoolExecutor, as_completed
 import logging
 from utils.visualization import WriterTensorboardX
+from utils.multiprocessing import executor_init
 
 
 class Coach():
@@ -161,6 +163,9 @@ class Coach():
             # examples based on the model were already collected (loaded)
             self.skipFirstSelfPlay = True
 
+"""
+Multiprocessing
+"""
 
 class CoachMP(Coach):
     def learn(self):
@@ -173,18 +178,19 @@ class CoachMP(Coach):
         """
 
         for i in tqdm(range(1, self.args.numIters+1), desc="Iteration"):
-            # bookkeeping
-            print('------ITER ' + str(i) + '------')
+            # Global lock for multiprocessing
+            lock = multiprocessing.Lock()
             # examples of the iteration
             if not self.skipFirstSelfPlay or i>1:
                 iterationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)
 
                 bar = tqdm(desc='Self Play', max=self.args.numEps)
 
-                with ProcessPoolExecutor(max_workers=nworkers) as executor:
+                with ProcessPoolExecutor(max_workers=nworkers, initializer=executor_init, initargs=(lock,)) as executor:
+
                     futures = []
                     for eps in range(self.args.numEps):
-                        self.mcts = MCTS(self.game, self.nnet, self.args)   # reset search tree
+                        self.mcts = MCTS(self.game, self.nnet, self.args, lock=lock)   # reset search tree
                         # iterationTrainExamples += self.executeEpisode()
                         futures.append(executor.submit(self.executeEpisode))
 
@@ -214,15 +220,15 @@ class CoachMP(Coach):
             # training new network, keeping a copy of the old one
             self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
             self.pnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
-            pmcts = MCTS(self.game, self.pnet, self.args)
+            pmcts = MCTS(self.game, self.pnet, self.args, lock=lock)
 
             self.nnet.train(trainExamples)
-            nmcts = MCTS(self.game, self.nnet, self.args)
+            nmcts = MCTS(self.game, self.nnet, self.args, lock=lock)
 
             print('PITTING AGAINST PREVIOUS VERSION')
-            arena = Arena(lambda x: np.argmax(pmcts.getActionProb(x, temp=0)),
-                          lambda x: np.argmax(nmcts.getActionProb(x, temp=0)), self.game)
-            pwins, nwins, draws = arena.playGames(self.args.arenaCompare)
+            arena = ArenaMP(lambda x: np.argmax(pmcts.getActionProb(x, temp=0)),
+                          lambda x: np.argmax(nmcts.getActionProb(x, temp=0)), self.game, lock=lock)
+            pwins, nwins, draws = arena.playGames(self.args.arenaCompare, num_workers=self.args.num_workers)
 
             print('NEW/PREV WINS : %d / %d ; DRAWS : %d' % (nwins, pwins, draws))
             if pwins+nwins == 0 or float(nwins)/(pwins+nwins) < self.args.updateThreshold:

@@ -8,6 +8,7 @@ import numpy as np
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from multiprocessing import cpu_count
 from tqdm import tqdm
+from utils.multiprocessing import executor_init
 
 class Arena():
     """
@@ -109,7 +110,22 @@ class ArenaMP(Arena):
     Arena class that utilizes multiprocessing.
     Note: Use non-human players only
     """
-    def playGames(self, num, num_workers=cpu_count(),verbose=False):
+    def __init__(self, player1, player2, game, display=None, lock=None):
+        """
+        Input:
+            player 1,2: two functions that takes board as input, return action
+            game: Game object
+            display: a function that takes board as input and prints it (e.g.
+                     display in othello/OthelloGame). Is necessary for verbose
+                     mode.
+            lock: optional lock for multiprocessing
+        see othello/OthelloPlayers.py for an example. See pit.py for pitting
+        human players/other baselines with each other.
+        """
+        super().__init__(player1, player2, game, display=None)
+        self.lock = lock
+
+    def playGames(self, num, num_workers=cpu_count(), verbose=False):
         """
         Plays num games in which player1 starts num/2 games and player2 starts
         num/2 games.
@@ -125,7 +141,7 @@ class ArenaMP(Arena):
         twoWon = 0
         draws = 0
 
-        with ProcessPoolExecutor(max_workers=num_workers) as executor:
+        with ProcessPoolExecutor(max_workers=nworkers, initializer=executor_init, initargs=(self.lock,)) as executor:
             futures = []
             for _ in range(num):
                 # gameResult = self.playGame(verbose=verbose)
