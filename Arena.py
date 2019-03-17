@@ -122,7 +122,7 @@ class ArenaMP(Arena):
         see othello/OthelloPlayers.py for an example. See pit.py for pitting
         human players/other baselines with each other.
         """
-        super().__init__(player1, player2, game, display=None)
+        super().__init__(player1, player2, game, display=display)
         self.lock = lock
 
     def playGames(self, num, num_workers=cpu_count(), verbose=False):
@@ -141,7 +141,7 @@ class ArenaMP(Arena):
         twoWon = 0
         draws = 0
 
-        with ProcessPoolExecutor(max_workers=nworkers, initializer=executor_init, initargs=(self.lock,)) as executor:
+        with ProcessPoolExecutor(max_workers=num_workers) as executor:
             futures = []
             for _ in range(num):
                 # gameResult = self.playGame(verbose=verbose)

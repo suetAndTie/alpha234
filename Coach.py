@@ -40,7 +40,7 @@ class Coach():
         start_time = datetime.datetime.now().strftime('%m%d_%H%M%S')
         self.checkpoint_dir = os.path.join(self.args.checkpoint, self.args.name, start_time)
         # setup visualization writer instance
-        writer_dir = os.path.join(self.args.log_dir, self.args.name, start_time)
+        writer_dir = os.path.join(self.args.log_dir, self.args.name, 'coach', start_time)
         self.writer = WriterTensorboardX(writer_dir, self.logger, self.args.tensorboardX)
 
     def executeEpisode(self):
@@ -181,14 +181,16 @@ class CoachMP(Coach):
 
         for i in tqdm(range(1, self.args.numIters+1), desc="Iteration"):
             # Global lock for multiprocessing
-            lock = multiprocessing.Lock()
+            manager = multiprocessing.Manager()
+            lock = manager.Lock()
+
             # examples of the iteration
             if not self.skipFirstSelfPlay or i>1:
                 iterationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)
 
                 bar = tqdm(desc='Self Play', max=self.args.numEps)
 
-                with ProcessPoolExecutor(max_workers=nworkers, initializer=executor_init, initargs=(lock,)) as executor:
+                with ProcessPoolExecutor(max_workers=nworkers) as executor:
 
                     futures = []
                     for eps in range(self.args.numEps):
