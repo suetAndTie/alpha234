@@ -30,7 +30,7 @@ class HumanConnect4Player():
 
 class OneStepLookaheadConnect4Player():
     """Simple player who always takes a win if presented, or blocks a loss if obvious, otherwise is random."""
-    def __init__(self, game, verbose=True):
+    def __init__(self, game, verbose=False):
         self.game = game
         self.player_num = 1
         self.verbose = verbose

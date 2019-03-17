@@ -1,7 +1,9 @@
-import sys
-import numpy as np
+"""
+Based on
+https://github.com/suragnair/alpha-zero-general
+"""
 
-sys.path.append('..')
+import numpy as np
 from Game import Game
 from .Connect4Logic import Board
 

@@ -1,8 +1,12 @@
 """
 config.py
 """
+from multiprocessing import cpu_count
 
 class Config():
+    name = 'alpha234'
+
+    # Training
     numIters = 1000
     numEps = 100
     tempThreshold = 15
@@ -12,7 +16,15 @@ class Config():
     arenaCompare = 40
     cpuct = 1
 
-    checkpoint = './temp/'
+    # Hardware
+    num_workers = cpu_count()
+
+    # Models
+    checkpoint = './saved/'
     load_model = False
     load_folder_file = ('/dev/models/8x100x50','best.pth.tar')
     numItersForTrainExamplesHistory = 20
+
+    # Logging
+    log_dir = 'saved/runs'
+    tensorboardX = True
