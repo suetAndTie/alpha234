@@ -12,7 +12,7 @@ from torchvision import datasets, transforms
 from torch.autograd import Variable
 
 class Connect4NNet(nn.Module):
-    def __init__(self, game, num_channels=512, dropoout=0.0):
+    def __init__(self, game, num_channels=512, dropout=0.0):
         super().__init__()
 
         # game params

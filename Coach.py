@@ -26,15 +26,16 @@ class Coach():
     """
     def __init__(self, game, nnet, args):
         self.game = game
-        self.nnet = nnet
-        self.pnet = self.nnet.__class__(self.game)  # the competitor network
         self.args = args
+        self.nnet = nnet
+        self.pnet = self.nnet.__class__(self.game, self.args)  # the competitor network
         self.mcts = MCTS(self.game, self.nnet, self.args)
         self.trainExamplesHistory = []    # history of examples from args.numItersForTrainExamplesHistory latest iterations
         self.skipFirstSelfPlay = False # can be overriden in loadTrainExamples()
 
+        self.elo = 0 # elo score of the current model
+
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.writer = WriterTensorboardX()
         # setup directory for checkpoint saving
         start_time = datetime.datetime.now().strftime('%m%d_%H%M%S')
         self.checkpoint_dir = os.path.join(self.args.checkpoint, self.args.name, start_time)
@@ -89,6 +90,7 @@ class Coach():
         """
 
         for i in tqdm(range(1, self.args.numIters+1), desc='Iteration'):
+            self.writer.set_step()
             # examples of the iteration
             if not self.skipFirstSelfPlay or i>1:
                 iterationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)

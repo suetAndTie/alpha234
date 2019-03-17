@@ -13,7 +13,6 @@ import numpy as np
 import math
 import sys
 from utils.util import AverageMeter
-from pytorch_classification.utils import Bar, AverageMeter
 from NeuralNet import NeuralNet
 
 import argparse
@@ -23,21 +22,12 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import datasets, transforms
 
-from .OthelloNNet import OthelloNNet as onnet
-
-args = dotdict({
-    'lr': 0.001,
-    'dropout': 0.3,
-    'epochs': 10,
-    'batch_size': 64,
-    'cuda': torch.cuda.is_available(),
-    'num_channels': 512,
-})
+from .Connect4NNet import Connect4NNet as c4net
 
 class NNetWrapper(NeuralNet):
     def __init__(self, game, args):
         self.args = args
-        self.nnet = onnet(game, args)
+        self.nnet = c4net(game, num_channels=self.args.num_channels, dropout=self.args.dropout)
         self.board_x, self.board_y = game.getBoardSize()
         self.action_size = game.getActionSize()
 

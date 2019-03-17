@@ -2,6 +2,7 @@
 config.py
 """
 from multiprocessing import cpu_count
+import torch
 
 class Config():
     name = 'alpha234'

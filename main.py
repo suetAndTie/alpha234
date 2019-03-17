@@ -4,14 +4,16 @@ Method to train the neural network
 """
 
 from Coach import Coach
-from othello.OthelloGame import OthelloGame as Game
-from othello.pytorch.NNet import NNetWrapper as nn
+# from games.othello.OthelloGame import OthelloGame as Game
+# from games.othello.pytorch.NNet import NNetWrapper as nn
+from games.tictactoe.TicTacToeGame import TicTacToeGame as Game
+from games.connect4.NNet import NNetWrapper as nn
 from config import Config
 
 
 def main(config):
-    g = Game(6)
-    nnet = nn(g)
+    g = Game()
+    nnet = nn(g, config)
 
     if config.load_model:
         nnet.load_checkpoint(config.load_folder_file[0], config.load_folder_file[1])
@@ -24,4 +26,4 @@ def main(config):
 
 if __name__=="__main__":
     config = Config()
-    main(confiug)
+    main(config)
