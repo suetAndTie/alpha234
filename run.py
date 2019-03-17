@@ -13,7 +13,7 @@ def main():
 
     arena = Arena(hp, rp, game, display=display)
 
-    arena.playGames(2,verbose=True)
+    arena.playGames(2, verbose=True)
 
 if __name__ == '__main__':
     main()

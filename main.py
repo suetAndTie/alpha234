@@ -1,7 +1,7 @@
 from Coach import Coach
 from othello.OthelloGame import OthelloGame as Game
 from othello.pytorch.NNet import NNetWrapper as nn
-from utils import *
+from utils import dotdict
 
 args = dotdict({
     'numIters': 1000,
@@ -20,7 +20,7 @@ args = dotdict({
 
 })
 
-if __name__=="__main__":
+def main():
     g = Game(6)
     nnet = nn(g)
 
@@ -32,3 +32,6 @@ if __name__=="__main__":
         print("Load trainExamples from file")
         c.loadTrainExamples()
     c.learn()
+
+if __name__=="__main__":
+    main()
