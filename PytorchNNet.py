@@ -23,6 +23,7 @@ import torch.optim as optim
 from torchvision import datasets, transforms
 from tqdm import tqdm
 
+from utils.util import AverageMeter
 from utils.visualization import WriterTensorboardX
 from games.connect4.Connect4NNet import Connect4NNet as c4net
 

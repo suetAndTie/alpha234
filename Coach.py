@@ -131,8 +131,10 @@ class Coach():
                 arena = Arena(lambda x: np.argmax(nmcts.getActionProb(x, temp=0)),
                               metric_opponent(self.game).play, self.game)
                 nwins, owins, draws = arena.playGames(self.args.metricArenaCompare)
-                self.writer.add_scalar('{}_win'.format(metric_opponent.__name__),
-                                       float(nwins) / self.args.metricArenaCompare)
+                print('%s WINS : %d / %d ; DRAWS : %d' % (metric_opponent.__name__, nwins, owins, draws))
+                if nwins+owins == 0: win_prct = 0
+                else: win_prct = float(nwins) / (nwins+owins)
+                self.writer.add_scalar('{}_win'.format(metric_opponent.__name__), win_prct)
                 # Reset nmcts
                 nmcts = MCTS(self.game, self.nnet, self.args)
 
@@ -140,7 +142,9 @@ class Coach():
             arena = Arena(lambda x: np.argmax(pmcts.getActionProb(x, temp=0)),
                           lambda x: np.argmax(nmcts.getActionProb(x, temp=0)), self.game)
             pwins, nwins, draws = arena.playGames(self.args.arenaCompare)
-            self.writer.add_scalar('self_win', float(nwins) / self.args.arenaCompare)
+            if nwins+pwins == 0: win_prct = 0
+            else: win_prct = float(nwins) / (nwins+pwins)
+            self.writer.add_scalar('self_win', win_prct)
 
             # Calculate elo score for self play
             results = [-x for x in arena.get_results()] # flip to be next neural network wins
@@ -297,6 +301,7 @@ class CoachMP(Coach):
                 arena = ArenaMP(NNetPlayer(self.game, self.nnet, self.args).play,
                               metric_opponent(self.game).play, self.game)
                 nwins, owins, draws = arena.playGames(self.args.metricArenaCompare)
+                print('%s WINS : %d / %d ; DRAWS : %d' % (metric_opponent.__name__, nwins, owins, draws))
                 self.writer.add_scalar('{}_win'.format(metric_opponent.__name__),
                                        float(nwins) / self.args.metricArenaCompare)
 
