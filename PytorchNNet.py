@@ -54,7 +54,7 @@ class NNetWrapper(NeuralNet):
         scheduler = self.args.lr_scheduler(optimizer, **self.args.lr_scheduler_kwargs)
 
         # If no writer, create unusable writer
-        if writer is None: WriterTensorboardX(None, None, False)
+        if writer is None: writer = WriterTensorboardX(None, None, False)
 
         for epoch in tqdm(range(self.args.epochs), desc="Training Epoch"):
             self.nnet.train()

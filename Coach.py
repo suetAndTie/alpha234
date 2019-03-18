@@ -294,7 +294,8 @@ class CoachMP(Coach):
             self.pnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
 
             # Train model
-            self.nnet.train(trainExamples)
+            self.nnet.train(trainExamples, self.writer)
+            self.writer.set_step(i-1, "learning")
 
             print("PITTING AGAINST METRIC COMPONENTS")
             for metric_opponent in self.args.metric_opponents:
