@@ -10,13 +10,14 @@ from Arena import Arena, ArenaMP
 # from games.tictactoe.TicTacToePlayers import *
 
 from games.connect4.Connect4Game import Connect4Game, display
-from games.connect4.Connect4Players import *
+from games.connect4.Connect4Players import HumanConnect4Player
+from players.OneStepLookaheadPlayer import OneStepLookaheadPlayer
 
 def main():
     game = Connect4Game()
 
-    rp = OneStepLookaheadConnect4Player(game).play
-    rp2 = OneStepLookaheadConnect4Player(game).play
+    rp = OneStepLookaheadPlayer(game).play
+    rp2 = OneStepLookaheadPlayer(game).play
     hp = HumanConnect4Player(game).play
     # arena = Arena(hp, rp, game, display=display)
     arena = ArenaMP(rp, rp2, game, display=display)

@@ -158,7 +158,7 @@ class ArenaMP(Arena):
             assert valids[action] > 0, "action {} is not valid".format(action)
             board, curPlayer = game.getNextState(board, curPlayer, action)
         if verbose:
-            assert(self.display)
+            assert(display)
             print("Game over: Turn ", str(it), "Result ", str(game.getGameEnded(board, 1)))
             display(board)
         return game.getGameEnded(board, 1)
