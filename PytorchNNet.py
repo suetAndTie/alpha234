@@ -65,7 +65,7 @@ class NNetWrapper(NeuralNet):
             batch_idx = 0
 
             while batch_idx < num_batches:
-                self.writer.set_step((self.train_iteration * self.args.epochs * num_batches) + (epoch * num_batches) + batch_idx)
+                writer.set_step((self.train_iteration * self.args.epochs * num_batches) + (epoch * num_batches) + batch_idx)
 
                 sample_ids = np.random.randint(len(examples), size=self.args.batch_size)
                 boards, pis, vs = list(zip(*[examples[i] for i in sample_ids]))
@@ -84,9 +84,9 @@ class NNetWrapper(NeuralNet):
                 total_loss = l_pi + l_v
 
                 # record loss
-                self.writer.add_scalar('pi_loss', l_pi.item())
-                self.writer.add_scalar('v_loss', l_v.item())
-                self.writer.add_scalar('loss', total_loss.item())
+                writer.add_scalar('pi_loss', l_pi.item())
+                writer.add_scalar('v_loss', l_v.item())
+                writer.add_scalar('loss', total_loss.item())
 
                 # compute gradient and do SGD step
                 optimizer.zero_grad()

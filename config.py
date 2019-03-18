@@ -6,19 +6,19 @@ from multiprocessing import cpu_count
 import torch
 from functools import partial
 
-from games.connect4.Connect4Game import Connect4Game
-from games.connect4.Connect4NNet import Connect4NNet
-# from games.tictactoe.TicTacToeGame import TicTacToeGame
-# from games.tictactoe.TicTacToeNNet import TicTacToeNNet
+# from games.connect4.Connect4Game import Connect4Game
+# from games.connect4.Connect4NNet import Connect4NNet
+from games.tictactoe.TicTacToeGame import TicTacToeGame
+from games.tictactoe.TicTacToeNNet import TicTacToeNNet
 from players.RandomPlayer import RandomPlayer
 from players.OneStepLookaheadPlayer import OneStepLookaheadPlayer
 
 
 class Config():
     # Overall setting
-    name = 'alpha234_connect4'
-    game = Connect4Game
-    nnet = Connect4NNet
+    name = 'alpha234_tictactoe'
+    game = TicTacToeGame
+    nnet = TicTacToeNNet
     use_multiprocessing = True
 
 
