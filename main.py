@@ -4,26 +4,32 @@ Method to train the neural network
 """
 
 from Coach import Coach, CoachMP
-# from games.othello.OthelloGame import OthelloGame as Game
-# from games.othello.pytorch.NNet import NNetWrapper as nn
-# from games.tictactoe.TicTacToeGame import TicTacToeGame as Game
 from games.connect4.Connect4Game import Connect4Game as Game
-from games.connect4.NNet import NNetWrapper as nn
+from games.connect4.Connect4NNet import Connect4NNet
+from PytorchNNet import NNetWrapper
 from config import Config
 
 
 def main(config):
-    g = Game()
-    nnet = nn(g, config, tensorboard=config.tensorboardX)
+    game = Game()
 
-    if config.load_model:
-        nnet.load_checkpoint(config.load_folder_file[0], config.load_folder_file[1])
+    # Set up model
+    nn = Connect4NNet(game, num_channels=config.num_channels, dropout=config.dropout)
+    nnet = NNetWrapper(game, config, nnet=nn, tensorboard=config.tensorboardX)
 
-    c = Coach(g, nnet, config)
+    # load model from checkpoint
     if config.load_model:
+        nnet.load_checkpoint(folder=config.load_model_file[0], filename=config.load_model_file[1])
+
+    if config.use_multiprocessing: coach = CoachMP(game, nnet, config)
+    else: coach = Coach(game, nnet, config)
+
+    # load training examples
+    if config.load_train_examples:
         print("Load trainExamples from file")
-        c.loadTrainExamples()
-    c.learn()
+        coach.loadTrainExamples()
+
+    coach.learn()
 
 if __name__=="__main__":
     config = Config()

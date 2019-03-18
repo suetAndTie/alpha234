@@ -24,12 +24,16 @@ from torchvision import datasets, transforms
 from tqdm import tqdm
 
 from utils.visualization import WriterTensorboardX
-from .Connect4NNet import Connect4NNet as c4net
+from games.connect4.Connect4NNet import Connect4NNet as c4net
 
 class NNetWrapper(NeuralNet):
-    def __init__(self, game, args, tensorboard=False):
+    def __init__(self, game, args, nnet=None, tensorboard=False):
         self.args = args
-        self.nnet = c4net(game, num_channels=self.args.num_channels, dropout=self.args.dropout)
+        if nnet is None:
+            # default is connect4neural net
+            self.nnet = c4net(game, num_channels=self.args.num_channels, dropout=self.args.dropout)
+        else:
+            self.nnet = nnet
         self.board_x, self.board_y = game.getBoardSize()
         self.action_size = game.getActionSize()
         self.train_iteration = 0
@@ -37,21 +41,26 @@ class NNetWrapper(NeuralNet):
         if self.args.cuda:
             self.nnet.cuda()
 
-        self.logger = logging.getLogger(self.__class__.__name__)
-        start_time = datetime.datetime.now().strftime('%m%d_%H%M%S')
-        # setup visualization writer instance
-        writer_dir = os.path.join(self.args.log_dir, self.args.name, self.__class__.__name__, start_time)
-        self.writer = WriterTensorboardX(writer_dir, self.logger, tensorboard)
+    def setup_multiprocessing(self):
+        """
+        Sets up model for multiprocessing in pytorch
+        """
+        self.nnet.share_memory()
 
-
-    def train(self, examples):
+    def train(self, examples, writer=None):
         """
         examples: list of examples, each example is of form (board, pi, v)
+        writer: optional tensorboardX writer
         """
-        optimizer = optim.Adam(self.nnet.parameters(), lr=self.args.lr, betas=self.args.betas)
+        optimizer = self.args.optimizer(self.nnet.parameters(), lr=self.args.lr, **self.args.optimizer_kwargs)
+        scheduler = self.args.lr_scheduler(optimizer, **self.args.lr_scheduler_kwargs)
+
+        # If no writer, create unusable writer
+        if writer is None: WriterTensorboardX(None, None, False)
 
         for epoch in tqdm(range(self.args.epochs), desc="Training Epoch"):
             self.nnet.train()
+            scheduler.step()
 
             num_batches = int(len(examples)/self.args.batch_size)
             bar = tqdm(desc='Batch', total=num_batches)

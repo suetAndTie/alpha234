@@ -45,3 +45,8 @@ class NeuralNet():
         Loads parameters of the neural network from folder/filename
         """
         pass
+
+    def setup_multiprocessing(self):
+        """
+        Set up the model for multiprocessing. (Specific for framework used)
+        """

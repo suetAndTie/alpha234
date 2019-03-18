@@ -8,17 +8,20 @@ import os
 import sys
 import datetime
 from collections import deque
-from Arena import Arena
+from Arena import Arena, ArenaMP
 from MCTS import MCTS
 import numpy as np
 from tqdm import tqdm
 from pickle import Pickler, Unpickler
 from random import shuffle
-import multiprocessing
-from concurrent.futures import ProcessPoolExecutor, as_completed
 import logging
 from utils.visualization import WriterTensorboardX
 from metric import elo
+# import multiprocessing as mp
+# Use torch multiprocessing (wrapper for multiprocessing) and works with pytorch models
+import torch.multiprocessing as mp
+from functools import partial
+from players.NeuralNetPlayer import NNetPlayer
 
 
 class Coach():
@@ -99,7 +102,6 @@ class Coach():
                 for eps in tqdm(range(self.args.numEps), desc='mcts.Episode'):
                     iterationTrainExamples += self.executeEpisode()
 
-
                 # save the iteration examples to the history
                 self.trainExamplesHistory.append(iterationTrainExamples)
 
@@ -131,6 +133,8 @@ class Coach():
                 nwins, owins, draws = arena.playGames(self.args.metricArenaCompare)
                 self.writer.add_scalar('{}_win'.format(metric_opponent.__name__),
                                        float(nwins) / self.args.metricArenaCompare)
+                # Reset nmcts
+                nmcts = MCTS(self.game, self.nnet, self.args)
 
             print('PITTING AGAINST PREVIOUS VERSION')
             arena = Arena(lambda x: np.argmax(pmcts.getActionProb(x, temp=0)),
@@ -187,22 +191,20 @@ class Coach():
 Multiprocessing
 https://stackoverflow.com/questions/44185770/call-multiprocessing-in-class-method-python
 """
-from multiprocessing import Pool
-def parallel_call(params):  # a helper for calling 'remote' instances
-    cls = getattr(sys.modules[__name__], params[0])  # get our class type
-    instance = cls.__new__(cls)  # create a new instance without invoking __init__
-    instance.__dict__ = params[1]  # apply the passed state to the new instance
-    method = getattr(instance, params[2])  # get the requested method
-    args = params[3] if isinstance(params[3], (list, tuple)) else [params[3]]
-    return method(*args)  # expand arguments, call our method and return the result
 
 class CoachMP(Coach):
-    def prepare_call(self, name, args):  # creates a 'remote call' package for each argument
-        for arg in args:
-            yield [self.__class__.__name__, self.__dict__, name, arg]
+    def __init__(self, game, nnet, args):
+        super().__init__(game, nnet, args)
+        # Setup model for multiprocessing (for pytorch, needs to share_memory())
+        self.nnet.setup_multiprocessing()
+        self.pnet.setup_multiprocessing()
 
-    def executeEpisode(self, lock=None):
+    @staticmethod
+    def executeEpisode(game, nnet, args, _=None):
         """
+        MUST be a static method to run in multiprocessing!! Multiprocessing doesn't
+        work with class methods
+
         This function executes one episode of self-play, starting with player 1.
         As the game is played, each turn is added as a training example to
         trainExamples. The game is played till the game ends. After the game
@@ -211,35 +213,39 @@ class CoachMP(Coach):
         It uses a temp=1 if episodeStep < tempThreshold, and thereafter
         uses temp=0.
         Params:
-            lock=None: optional multiprocessing lock to add
+            game: the game
+            nnet: neural network
+            args: args config instance
+            _: ignore parameter, used to take iterable in pool.imap_unordered
         Returns:
             trainExamples: a list of examples of the form (canonicalBoard,pi,v)
                            pi is the MCTS informed policy vector, v is +1 if
                            the player eventually won the game, else -1.
         """
-        self.mcts = MCTS(self.game, self.nnet, self.args, lock=lock)   # reset search tree
+        mcts = MCTS(game, nnet, args)   # reset search tree
         trainExamples = []
-        board = self.game.getInitBoard()
-        self.curPlayer = 1
+        board = game.getInitBoard()
+        curPlayer = 1
         episodeStep = 0
 
         while True:
             episodeStep += 1
-            canonicalBoard = self.game.getCanonicalForm(board,self.curPlayer)
-            temp = int(episodeStep < self.args.tempThreshold)
+            canonicalBoard = game.getCanonicalForm(board,curPlayer)
+            temp = int(episodeStep < args.tempThreshold)
 
-            pi = self.mcts.getActionProb(canonicalBoard, temp=temp)
-            sym = self.game.getSymmetries(canonicalBoard, pi)
+            pi = mcts.getActionProb(canonicalBoard, temp=temp)
+            sym = game.getSymmetries(canonicalBoard, pi)
             for b,p in sym:
-                trainExamples.append([b, self.curPlayer, p, None])
+                trainExamples.append([b, curPlayer, p, None])
 
             action = np.random.choice(len(pi), p=pi)
-            board, self.curPlayer = self.game.getNextState(board, self.curPlayer, action)
+            board, curPlayer = game.getNextState(board, curPlayer, action)
 
-            r = self.game.getGameEnded(board, self.curPlayer)
+            r = game.getGameEnded(board, curPlayer)
 
             if r!=0:
-                return [(x[0],x[2],r*((-1)**(x[1]!=self.curPlayer))) for x in trainExamples]
+                return [(x[0],x[2],r*((-1)**(x[1]!=curPlayer))) for x in trainExamples]
+
 
     def learn(self):
         """
@@ -252,32 +258,16 @@ class CoachMP(Coach):
 
         for i in tqdm(range(1, self.args.numIters+1), desc="Iteration"):
             self.writer.set_step(i-1, "learning")
-            # Global lock for multiprocessing
-            manager = multiprocessing.Manager()
-            lock = manager.Lock()
 
             # examples of the iteration
             if not self.skipFirstSelfPlay or i>1:
                 iterationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)
 
-                bar = tqdm(desc='mcts.Episode', total=self.args.numEps)
-
-                with Pool(processes=self.args.num_workers) as pool:
-                    # pool.
-                    futures = []
-                    for eps in range(self.args.numEps):
-                        # iterationTrainExamples += self.executeEpisode()
-                        # futures.append(executor.submit(self.executeEpisode, lock))
-                        futures.append(executor.submit(parallel_call, self.prepare_call("executeEpisode", lock)))
-
-                    for future in as_completed(futures):
-                        # iterationTrainExamples += future.result()
-                        print(future.result())
-                        # bookkeeping + plot progress
-                        bar.update()
-
-                bar.close()
-                raise
+                # Use processing pool to run self play episodes via mulitprocessing
+                with mp.Pool(processes=self.args.num_workers) as pool:
+                    for result in tqdm(pool.imap_unordered(partial(self.executeEpisode, self.game, self.nnet, self.args), range(self.args.numEps)),
+                                       desc='MCTS.Episode', total=self.args.numEps):
+                        iterationTrainExamples += result
 
                 # save the iteration examples to the history
                 self.trainExamplesHistory.append(iterationTrainExamples)
@@ -298,27 +288,26 @@ class CoachMP(Coach):
             # training new network, keeping a copy of the old one
             self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
             self.pnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
-            pmcts = MCTS(self.game, self.pnet, self.args, lock=lock)
 
+            # Train model
             self.nnet.train(trainExamples)
-            nmcts = MCTS(self.game, self.nnet, self.args, lock=lock)
 
             print("PITTING AGAINST METRIC COMPONENTS")
             for metric_opponent in self.args.metric_opponents:
-                arena = ArenaMP(lambda x: np.argmax(nmcts.getActionProb(x, temp=0)),
+                arena = ArenaMP(NNetPlayer(self.game, self.nnet, self.args).play,
                               metric_opponent(self.game).play, self.game)
                 nwins, owins, draws = arena.playGames(self.args.metricArenaCompare)
                 self.writer.add_scalar('{}_win'.format(metric_opponent.__name__),
                                        float(nwins) / self.args.metricArenaCompare)
 
             print('PITTING AGAINST PREVIOUS VERSION')
-            arena = ArenaMP(lambda x: np.argmax(pmcts.getActionProb(x, temp=0)),
-                          lambda x: np.argmax(nmcts.getActionProb(x, temp=0)), self.game, lock=lock)
+            arena = ArenaMP(NNetPlayer(self.game, self.pnet, self.args).play,
+                          NNetPlayer(self.game, self.nnet, self.args).play, self.game)
             pwins, nwins, draws = arena.playGames(self.args.arenaCompare, num_workers=self.args.num_workers)
             self.writer.add_scalar('self_win', float(nwins) / self.args.arenaCompare)
 
             # Calculate elo score for self play
-            results = [-x for x in arena.get_results()] # flip to be next neural network wins
+            results = [-x for x in arena.get_results()] # flip, so nnet wins
             nelo, pelo = elo(self.elo, self.elo, results)
 
             print('NEW/PREV WINS : %d / %d ; DRAWS : %d' % (nwins, pwins, draws))

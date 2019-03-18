@@ -1,12 +1,16 @@
 """
 config.py
 """
+import os
 from multiprocessing import cpu_count
 import torch
 from players.RandomPlayer import RandomPlayer
+from players.OneStepLookaheadPlayer import OneStepLookaheadPlayer
 
 class Config():
-    name = 'alpha234'
+    name = 'alpha234_connect4'
+
+    use_multiprocessing = True
 
     # RL Training
     numIters = 1000
@@ -15,31 +19,43 @@ class Config():
     updateThreshold = 0.6
     maxlenOfQueue = 200000
     numMCTSSims = 25
-    arenaCompare = 10 # number of games of self play to choose previous or current nnet
+    arenaCompare = 40 # number of games of self play to choose previous or current nnet
     cpuct = 1
     numItersForTrainExamplesHistory = 20
 
+
     # Hardware
     num_workers = cpu_count()
+    cuda = torch.cuda.is_available() # use cuda if available
 
-    # Model
-    lr = 0.001
-    betas = (0.9, 0.999)
+
+    # Model Architecture
     dropout = 0.3
-    epochs = 10
-    batch_size = 64
-    cuda = torch.cuda.is_available()
     num_channels = 512
 
+
+    # Model Training
+    epochs = 10 # number of epochs of train model given a single iteration
+    batch_size = 64
+    lr = 0.001
+    optimizer = torch.optim.Adam
+    optimizer_kwargs = {'betas': (0.9, 0.999)}
+    lr_scheduler = torch.optim.lr_scheduler.StepLR
+    lr_scheduler_kwargs = {'step_size':1, 'gamma':1}
+
+
     # Metrics
-    metric_opponents = [RandomPlayer]
-    metricArenaCompare = 1 # number of games to play against metric opponent
+    metric_opponents = [RandomPlayer, OneStepLookaheadPlayer]
+    metricArenaCompare = 20 # number of games to play against metric opponent
 
 
     # Model Loading
-    checkpoint = './saved/'
-    load_model = False
-    load_folder_file = ('/dev/models/8x100x50','best.pth.tar')
+    checkpoint = os.path.join('saved/', name)
+    load_model = False # load model
+    load_model_file = (checkpoint, 'best.pth.tar')
+    load_train_examples = False # load training examples
+    load_folder_file = (checkpoint,'best.pth.tar') # file to training examples
+
 
     # Logging
     log_dir = 'saved/runs'

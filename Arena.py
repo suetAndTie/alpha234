@@ -6,6 +6,8 @@ https://github.com/suragnair/alpha-zero-general
 
 import numpy as np
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from functools import partial
+import torch.multiprocessing as mp
 from multiprocessing import cpu_count
 from tqdm import tqdm
 
@@ -41,7 +43,7 @@ class Arena():
             or
                 draw result returned from the game that is neither 1, -1, nor 0.
         """
-        players = [self.player2, None, self.player1]
+        players = [None, self.player1, self.player2]
         curPlayer = 1
         board = self.game.getInitBoard()
         it = 0
@@ -51,7 +53,7 @@ class Arena():
                 assert(self.display)
                 print("Turn ", str(it), "Player ", str(curPlayer))
                 self.display(board)
-            action = players[curPlayer+1](self.game.getCanonicalForm(board, curPlayer))
+            action = players[curPlayer](self.game.getCanonicalForm(board, curPlayer))
 
             valids = self.game.getValidMoves(self.game.getCanonicalForm(board, curPlayer),1)
 
@@ -111,50 +113,78 @@ class Arena():
     def get_results(self):
         return self.results
 
+
+"""
+Multiprocessing
+"""
+
 class ArenaMP(Arena):
     """
     Arena class that utilizes multiprocessing.
     Note: Use non-human players only
     """
-    def __init__(self, player1, player2, game, display=None, lock=None):
-        """
-        Input:
-            player 1,2: two functions that takes board as input, return action
-            game: Game object
-            display: a function that takes board as input and prints it (e.g.
-                     display in othello/OthelloGame). Is necessary for verbose
-                     mode.
-            lock: optional lock for multiprocessing
-        see othello/OthelloPlayers.py for an example. See pit.py for pitting
-        human players/other baselines with each other.
-        """
-        super().__init__(player1, player2, game, display=display)
-        self.lock = lock
 
-    def playGames(self, num, num_workers=cpu_count(), verbose=False):
+    @staticmethod
+    def playGame(player1, player2, game, display, verbose=False, _=None):
+        """
+        Executes one episode of a game.
+        Params:
+            player1
+            player2
+            game
+            display: function to display the board
+            verbose: bool to display everything
+            _: ignore, used only for pool imap
+        Returns:
+            either
+                winner: player who won the game (1 if player1, -1 if player2)
+            or
+                draw result returned from the game that is neither 1, -1, nor 0.
+        """
+        players = [None, player1, player2]
+        curPlayer = 1
+        board = game.getInitBoard()
+        it = 0
+        while game.getGameEnded(board, curPlayer)==0:
+            it+=1
+            if verbose:
+                assert(display)
+                print("Turn ", str(it), "Player ", str(curPlayer))
+                display(board)
+            action = players[curPlayer](game.getCanonicalForm(board, curPlayer))
+
+            valids = game.getValidMoves(game.getCanonicalForm(board, curPlayer),1)
+
+            assert valids[action] > 0, "action {} is not valid".format(action)
+            board, curPlayer = game.getNextState(board, curPlayer, action)
+        if verbose:
+            assert(self.display)
+            print("Game over: Turn ", str(it), "Result ", str(game.getGameEnded(board, 1)))
+            display(board)
+        return game.getGameEnded(board, 1)
+
+    def playGames(self, num, verbose=False, num_workers=cpu_count()):
         """
         Plays num games in which player1 starts num/2 games and player2 starts
         num/2 games.
+        Params:
+            num: number of games to play
+            verbose: bool to show everything
+            num_workers: number of workers to use for multiprocessing
         Returns:
             oneWon: games won by player1
             twoWon: games won by player2
             draws:  games won by nobody
         """
-        bar = tqdm(desc='Arena.playGames', total=num)
+        bar = tqdm(desc='Arena.PlayGames', total=num)
 
         num = int(num/2)
         oneWon = 0
         twoWon = 0
         draws = 0
 
-        with ProcessPoolExecutor(max_workers=num_workers) as executor:
-            futures = []
-            for _ in range(num):
-                # gameResult = self.playGame(verbose=verbose)
-                futures.append(executor.submit(self.playGame, verbose))
-
-            for future in as_completed(futures):
-                gameResult = future.result()
+        with mp.Pool(processes=num_workers) as pool:
+            for gameResult in pool.imap_unordered(partial(self.playGame, self.player1, self.player2, self.game, self.display, verbose), range(num)):
                 self.results.append(gameResult)
                 if gameResult==1:
                     oneWon+=1
@@ -167,13 +197,8 @@ class ArenaMP(Arena):
 
             self.player1, self.player2 = self.player2, self.player1
 
-            futures = []
-            for _ in range(num):
-                # gameResult = self.playGame(verbose=verbose)
-                futures.append(executor.submit(self.playGame, verbose))
-
-            for future in as_completed(futures):
-                gameResult = future.result()
+            for gameResult in pool.imap_unordered(partial(self.playGame, self.player1, self.player2, self.game, self.display, verbose), range(num)):
+                # append negative result, because players switched
                 self.results.append(-gameResult)
                 if gameResult==-1:
                     oneWon+=1

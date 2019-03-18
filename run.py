@@ -1,3 +1,10 @@
+"""
+run.py
+
+Testing ground, not actual code (use main.py instead)
+"""
+
+
 from Arena import Arena, ArenaMP
 # from games.tictactoe.TicTacToeGame import TicTacToeGame, display
 # from games.tictactoe.TicTacToePlayers import *
