@@ -10,6 +10,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.autograd import Variable
+import os
 
 class TicTacToeNNet(nn.Module):
     def __init__(self, game, num_channels=512, dropout=0.0):
