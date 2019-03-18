@@ -4,17 +4,15 @@ Method to train the neural network
 """
 
 from Coach import Coach, CoachMP
-from games.connect4.Connect4Game import Connect4Game as Game
-from games.connect4.Connect4NNet import Connect4NNet
 from PytorchNNet import NNetWrapper
 from config import Config
 
 
 def main(config):
-    game = Game()
+    game = config.game()
 
     # Set up model
-    nn = Connect4NNet(game, num_channels=config.num_channels, dropout=config.dropout)
+    nn = config.nnet(game, **config.nnet_kwargs)
     nnet = NNetWrapper(game, config, nnet=nn, tensorboard=config.tensorboardX)
 
     # load model from checkpoint
