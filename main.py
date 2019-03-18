@@ -12,8 +12,7 @@ def main(config):
     game = config.game()
 
     # Set up model
-    nn = config.nnet(game, **config.nnet_kwargs)
-    nnet = NNetWrapper(game, config, nnet=nn, tensorboard=config.tensorboardX)
+    nnet = NNetWrapper(game, config, tensorboard=config.tensorboardX)
 
     # load model from checkpoint
     if config.load_model:

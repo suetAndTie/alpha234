@@ -25,16 +25,13 @@ from tqdm import tqdm
 
 from utils.util import AverageMeter
 from utils.visualization import WriterTensorboardX
-from games.connect4.Connect4NNet import Connect4NNet as c4net
 
 class NNetWrapper(NeuralNet):
-    def __init__(self, game, args, nnet=None, tensorboard=False):
+    def __init__(self, game, args, tensorboard=False):
         self.args = args
-        if nnet is None:
-            # default is connect4neural net
-            self.nnet = c4net(game, num_channels=self.args.num_channels, dropout=self.args.dropout)
-        else:
-            self.nnet = nnet
+
+        self.nnet = self.args.nnet(game, **self.args.nnet_kwargs)
+
         self.board_x, self.board_y = game.getBoardSize()
         self.action_size = game.getActionSize()
         self.train_iteration = 0
