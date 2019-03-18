@@ -19,7 +19,7 @@ class Config():
     name = 'alpha234_tictactoe'
     game = TicTacToeGame
     nnet = TicTacToeNNet
-    use_multiprocessing = False
+    use_multiprocessing = True
 
 
     # RL Training
