@@ -75,7 +75,7 @@ class MCTS():
             # leaf node
             if self.lock is not None:
                 # Lock for multiprocessing
-                with lock:
+                with self.lock:
                     self.Ps[s], v = self.nnet.predict(canonicalBoard)
             else:
                 self.Ps[s], v = self.nnet.predict(canonicalBoard)

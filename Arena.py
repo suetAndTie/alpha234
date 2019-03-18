@@ -8,7 +8,6 @@ import numpy as np
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from multiprocessing import cpu_count
 from tqdm import tqdm
-from utils.multiprocessing import executor_init
 
 class Arena():
     """
@@ -29,6 +28,9 @@ class Arena():
         self.player2 = player2
         self.game = game
         self.display = display
+
+        # list to store results of games for elo (1 for player1 wins, -1 player2 wins)
+        self.results = []
 
     def playGame(self, verbose=False):
         """
@@ -78,6 +80,7 @@ class Arena():
 
         for _ in range(num):
             gameResult = self.playGame(verbose=verbose)
+            self.results.append(gameResult)
             if gameResult==1:
                 oneWon+=1
             elif gameResult==-1:
@@ -91,6 +94,7 @@ class Arena():
 
         for _ in range(num):
             gameResult = self.playGame(verbose=verbose)
+            self.results.append(-gameResult)
             if gameResult==-1:
                 oneWon+=1
             elif gameResult==1:
@@ -104,6 +108,8 @@ class Arena():
 
         return oneWon, twoWon, draws
 
+    def get_results(self):
+        return self.results
 
 class ArenaMP(Arena):
     """
@@ -149,6 +155,7 @@ class ArenaMP(Arena):
 
             for future in as_completed(futures):
                 gameResult = future.result()
+                self.results.append(gameResult)
                 if gameResult==1:
                     oneWon+=1
                 elif gameResult==-1:
@@ -167,6 +174,7 @@ class ArenaMP(Arena):
 
             for future in as_completed(futures):
                 gameResult = future.result()
+                self.results.append(-gameResult)
                 if gameResult==-1:
                     oneWon+=1
                 elif gameResult==1:
