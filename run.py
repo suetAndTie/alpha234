@@ -1,19 +1,21 @@
-from agents.random_agent import RandomAgent
-from games.connect4.game import Game
-from agents.user_agent import User
+from Arena import Arena, ArenaMP
+# from games.tictactoe.TicTacToeGame import TicTacToeGame, display
+# from games.tictactoe.TicTacToePlayers import *
+
+from games.connect4.Connect4Game import Connect4Game, display
+from games.connect4.Connect4Players import *
 
 def main():
-    agents = {1:User(), -1:RandomAgent()}
-    game = Game()
+    game = Connect4Game()
 
-    done = False
-    while not done:
-        game.gameState.get_visual_state()
-        next_action = agents[game.currentPlayer].choose_action(game)
-        # next_action
-        next_state, value, done, info = game.step(next_action)
-    game.gameState.get_visual_state()
-    print(game.currentPlayer)
+    rp = OneStepLookaheadConnect4Player(game).play
+    rp2 = OneStepLookaheadConnect4Player(game).play
+    hp = HumanConnect4Player(game).play
+    # arena = Arena(hp, rp, game, display=display)
+    arena = ArenaMP(rp, rp2, game, display=display)
+
+    out = arena.playGames(10, verbose=True)
+    print(out)
 
 if __name__ == '__main__':
     main()
