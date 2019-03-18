@@ -1,4 +1,6 @@
 import numpy as np
+from MCTS import MCTS
+
 
 class NNetPlayer():
     """

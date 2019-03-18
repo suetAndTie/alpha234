@@ -94,7 +94,6 @@ class Coach():
         """
 
         for i in tqdm(range(1, self.args.numIters+1), desc='Iteration'):
-            self.writer.set_step(i, "learning")
             # examples of the iteration
             if not self.skipFirstSelfPlay or i>1:
                 iterationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)
@@ -123,7 +122,8 @@ class Coach():
             self.pnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
             pmcts = MCTS(self.game, self.pnet, self.args)
 
-            self.nnet.train(trainExamples)
+            self.nnet.train(trainExamples, self.writer)
+            self.writer.set_step(i-1, "learning")
             nmcts = MCTS(self.game, self.nnet, self.args)
 
             print("PITTING AGAINST METRIC COMPONENTS")
@@ -261,7 +261,6 @@ class CoachMP(Coach):
         """
 
         for i in tqdm(range(1, self.args.numIters+1), desc="Iteration"):
-            self.writer.set_step(i-1, "learning")
 
             # examples of the iteration
             if not self.skipFirstSelfPlay or i>1:
