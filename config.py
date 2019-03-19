@@ -24,7 +24,7 @@ class Config():
 
     # RL Training
     numIters = 1000
-    numEps = 100
+    numEps = 2
     tempThreshold = 15
     updateThreshold = 0.6
     maxlenOfQueue = 200000
@@ -46,7 +46,7 @@ class Config():
 
 
     # Model Training
-    epochs = 10 # number of epochs of train model given a single iteration
+    epochs = 1 # number of epochs of train model given a single iteration
     batch_size = 64
     lr = 0.001
     optimizer = torch.optim.Adam

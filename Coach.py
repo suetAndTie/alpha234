@@ -21,7 +21,7 @@ from metric import elo
 # Use torch multiprocessing (wrapper for multiprocessing) and works with pytorch models
 import torch.multiprocessing as mp
 from functools import partial
-from players.NeuralNetPlayer import NNetPlayer
+from players.NNetPlayer import NNetPlayer
 import threading
 
 
