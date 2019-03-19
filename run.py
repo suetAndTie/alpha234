@@ -15,7 +15,7 @@ from games.connect4.Connect4NNet import Connect4NNet
 from players.OneStepLookaheadPlayer import OneStepLookaheadPlayer
 from players.NNetPlayer import NNetPlayer
 from PytorchNNet import NNetWrapper
-from config import Config
+from connect4_config import Config
 
 def main():
     game = Connect4Game()
@@ -27,12 +27,12 @@ def main():
     nn = NNetWrapper(game, config)
     ckpt = ('./weights/','connect4_checkpoint_26.pth.tar')
     nn.load_checkpoint(ckpt[0], ckpt[1])
-    nnp = NNetPlayer(game, nn, config)
+    nnp = NNetPlayer(game, nn, config).play
 
     arena = Arena(hp, nnp, game, display=display)
     # arena = ArenaMP(rp, rp2, game, display=display)
 
-    out = arena.playGames(1, verbose=True)
+    out = arena.playGame(verbose=True)
     print(out)
 
 if __name__ == '__main__':

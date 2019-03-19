@@ -44,7 +44,7 @@ class Coach():
         self.logger = logging.getLogger(self.__class__.__name__)
         start_time = datetime.datetime.now().strftime('%m%d_%H%M%S')
         # setup visualization writer instance
-        writer_dir = os.path.join(self.args.log_dir, self.args.name, self.__class__.__name__, start_time)
+        writer_dir = os.path.join(self.args.log_dir, self.args.name, start_time)
         self.writer = WriterTensorboardX(writer_dir, self.logger, self.args.tensorboardX)
 
     def executeEpisode(self):
