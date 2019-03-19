@@ -16,9 +16,9 @@ from players.OneStepLookaheadPlayer import OneStepLookaheadPlayer
 
 class Config():
     # Overall setting
-    name = 'alpha234_tictactoe'
-    game = TicTacToeGame
-    nnet = TicTacToeNNet
+    name = 'alpha234_connect4_resnet'
+    game = Connect4Game
+    nnet = Connect4ResNet
     use_multiprocessing = True
 
 
@@ -42,7 +42,8 @@ class Config():
     # Model Architecture
     dropout = 0.3
     num_channels = 512
-    nnet_kwargs = {'num_channels':num_channels, 'dropout':dropout}
+    # nnet_kwargs = {'num_channels':num_channels, 'dropout':dropout}
+    nnet_kwargs = {}
 
 
     # Model Training
@@ -52,7 +53,7 @@ class Config():
     optimizer = torch.optim.Adam
     optimizer_kwargs = {'betas': (0.9, 0.999)}
     lr_scheduler = torch.optim.lr_scheduler.StepLR
-    lr_scheduler_kwargs = {'step_size':1, 'gamma':1}
+    lr_scheduler_kwargs = {'step_size':1, 'gamma':0.967}
 
 
     # Metrics
