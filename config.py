@@ -4,13 +4,23 @@ config.py
 import os
 from multiprocessing import cpu_count
 import torch
+from functools import partial
+
+# from games.connect4.Connect4Game import Connect4Game
+from games.connect4.Connect4NNet import Connect4NNet, Connect4ResNet
+from games.tictactoe.TicTacToeGame import TicTacToeGame
+from games.tictactoe.TicTacToeNNet import TicTacToeNNet
 from players.RandomPlayer import RandomPlayer
 from players.OneStepLookaheadPlayer import OneStepLookaheadPlayer
 
-class Config():
-    name = 'alpha234_connect4'
 
+class Config():
+    # Overall setting
+    name = 'alpha234_tictactoe'
+    game = TicTacToeGame
+    nnet = TicTacToeNNet
     use_multiprocessing = True
+
 
     # RL Training
     numIters = 1000
@@ -32,6 +42,7 @@ class Config():
     # Model Architecture
     dropout = 0.3
     num_channels = 512
+    nnet_kwargs = {'num_channels':num_channels, 'dropout':dropout}
 
 
     # Model Training

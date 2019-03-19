@@ -1,6 +1,5 @@
-torch==0.4.1
 torchvision==0.2.1
-tqdm==4.26.0
+torch==0.4.1
+tqdm==4.31.1
 numpy==1.15.1
 mcts==1.0.3
-othello==1.0b1

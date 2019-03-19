@@ -21,7 +21,8 @@ from metric import elo
 # Use torch multiprocessing (wrapper for multiprocessing) and works with pytorch models
 import torch.multiprocessing as mp
 from functools import partial
-from players.NeuralNetPlayer import NNetPlayer
+from players.NNetPlayer import NNetPlayer
+import threading
 
 
 class Coach():
@@ -43,7 +44,7 @@ class Coach():
         self.logger = logging.getLogger(self.__class__.__name__)
         start_time = datetime.datetime.now().strftime('%m%d_%H%M%S')
         # setup visualization writer instance
-        writer_dir = os.path.join(self.args.log_dir, self.args.name, self.__class__.__name__, start_time)
+        writer_dir = os.path.join(self.args.log_dir, self.args.name, start_time)
         self.writer = WriterTensorboardX(writer_dir, self.logger, self.args.tensorboardX)
 
     def executeEpisode(self):
@@ -94,7 +95,6 @@ class Coach():
         """
 
         for i in tqdm(range(1, self.args.numIters+1), desc='Iteration'):
-            self.writer.set_step(i, "learning")
             # examples of the iteration
             if not self.skipFirstSelfPlay or i>1:
                 iterationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)
@@ -123,7 +123,8 @@ class Coach():
             self.pnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
             pmcts = MCTS(self.game, self.pnet, self.args)
 
-            self.nnet.train(trainExamples)
+            self.nnet.train(trainExamples, self.writer)
+            self.writer.set_step(i-1, "learning")
             nmcts = MCTS(self.game, self.nnet, self.args)
 
             print("PITTING AGAINST METRIC COMPONENTS")
@@ -131,8 +132,10 @@ class Coach():
                 arena = Arena(lambda x: np.argmax(nmcts.getActionProb(x, temp=0)),
                               metric_opponent(self.game).play, self.game)
                 nwins, owins, draws = arena.playGames(self.args.metricArenaCompare)
-                self.writer.add_scalar('{}_win'.format(metric_opponent.__name__),
-                                       float(nwins) / self.args.metricArenaCompare)
+                print('%s WINS : %d / %d ; DRAWS : %d' % (metric_opponent.__name__, nwins, owins, draws))
+                if nwins+owins == 0: win_prct = 0
+                else: win_prct = float(nwins) / (nwins+owins)
+                self.writer.add_scalar('{}_win'.format(metric_opponent.__name__), win_prct)
                 # Reset nmcts
                 nmcts = MCTS(self.game, self.nnet, self.args)
 
@@ -140,7 +143,9 @@ class Coach():
             arena = Arena(lambda x: np.argmax(pmcts.getActionProb(x, temp=0)),
                           lambda x: np.argmax(nmcts.getActionProb(x, temp=0)), self.game)
             pwins, nwins, draws = arena.playGames(self.args.arenaCompare)
-            self.writer.add_scalar('self_win', float(nwins) / self.args.arenaCompare)
+            if nwins+pwins == 0: win_prct = 0
+            else: win_prct = float(nwins) / (nwins+pwins)
+            self.writer.add_scalar('self_win', win_prct)
 
             # Calculate elo score for self play
             results = [-x for x in arena.get_results()] # flip to be next neural network wins
@@ -257,7 +262,6 @@ class CoachMP(Coach):
         """
 
         for i in tqdm(range(1, self.args.numIters+1), desc="Iteration"):
-            self.writer.set_step(i-1, "learning")
 
             # examples of the iteration
             if not self.skipFirstSelfPlay or i>1:
@@ -266,8 +270,9 @@ class CoachMP(Coach):
                 # Use processing pool to run self play episodes via mulitprocessing
                 with mp.Pool(processes=self.args.num_workers) as pool:
                     for result in tqdm(pool.imap_unordered(partial(self.executeEpisode, self.game, self.nnet, self.args), range(self.args.numEps)),
-                                       desc='MCTS.Episode', total=self.args.numEps):
+                                                           desc='MCTS.Episode', total=self.args.numEps):
                         iterationTrainExamples += result
+
 
                 # save the iteration examples to the history
                 self.trainExamplesHistory.append(iterationTrainExamples)
@@ -290,21 +295,26 @@ class CoachMP(Coach):
             self.pnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
 
             # Train model
-            self.nnet.train(trainExamples)
+            self.nnet.train(trainExamples, self.writer)
+            self.writer.set_step(i-1, "learning")
 
             print("PITTING AGAINST METRIC COMPONENTS")
             for metric_opponent in self.args.metric_opponents:
                 arena = ArenaMP(NNetPlayer(self.game, self.nnet, self.args).play,
                               metric_opponent(self.game).play, self.game)
-                nwins, owins, draws = arena.playGames(self.args.metricArenaCompare)
-                self.writer.add_scalar('{}_win'.format(metric_opponent.__name__),
-                                       float(nwins) / self.args.metricArenaCompare)
+                nwins, owins, draws = arena.playGames(self.args.metricArenaCompare, num_workers=self.args.num_workers)
+                print('%s WINS : %d / %d ; DRAWS : %d' % (metric_opponent.__name__, nwins, owins, draws))
+                if nwins+owins == 0: win_prct = 0
+                else: win_prct = float(nwins) / (nwins+owins)
+                self.writer.add_scalar('{}_win'.format(metric_opponent.__name__), win_prct)
 
             print('PITTING AGAINST PREVIOUS VERSION')
             arena = ArenaMP(NNetPlayer(self.game, self.pnet, self.args).play,
                           NNetPlayer(self.game, self.nnet, self.args).play, self.game)
             pwins, nwins, draws = arena.playGames(self.args.arenaCompare, num_workers=self.args.num_workers)
-            self.writer.add_scalar('self_win', float(nwins) / self.args.arenaCompare)
+            if nwins+pwins == 0: win_prct = 0
+            else: win_prct = float(nwins) / (nwins+pwins)
+            self.writer.add_scalar('self_win', win_prct)
 
             # Calculate elo score for self play
             results = [-x for x in arena.get_results()] # flip, so nnet wins
