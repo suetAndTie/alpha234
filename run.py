@@ -11,6 +11,7 @@ from Arena import Arena, ArenaMP
 
 from games.connect4.Connect4Game import Connect4Game, display
 from games.connect4.Connect4Players import HumanConnect4Player
+from games.connect4.Connect4NNet import Connect4NNet
 from players.OneStepLookaheadPlayer import OneStepLookaheadPlayer
 from players.NNetPlayer import NNetPlayer
 from PytorchNNet import NNetWrapper
