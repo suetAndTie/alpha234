@@ -3,6 +3,9 @@ MCTS Player
 uses a dummy neural network of all zeros
 """
 from NeuralNet import NeuralNet
+from PytorchNNet import NNetWrapper
+from MCTS import MCTS
+import numpy as np
 
 class DummyNNet(NeuralNet):
         """
