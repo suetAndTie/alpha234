@@ -5,10 +5,8 @@ https://github.com/suragnair/alpha-zero-general
 
 
 import numpy as np
-from concurrent.futures import ProcessPoolExecutor, as_completed
 from functools import partial
 import torch.multiprocessing as mp
-from multiprocessing import cpu_count
 from tqdm import tqdm
 
 class Arena():
@@ -117,7 +115,7 @@ class Arena():
 """
 Multiprocessing
 """
-
+import os
 class ArenaMP(Arena):
     """
     Arena class that utilizes multiprocessing.
@@ -151,6 +149,7 @@ class ArenaMP(Arena):
                 assert(display)
                 print("Turn ", str(it), "Player ", str(curPlayer))
                 display(board)
+
             action = players[curPlayer](game.getCanonicalForm(board, curPlayer))
 
             valids = game.getValidMoves(game.getCanonicalForm(board, curPlayer),1)
@@ -163,7 +162,7 @@ class ArenaMP(Arena):
             display(board)
         return game.getGameEnded(board, 1)
 
-    def playGames(self, num, verbose=False, num_workers=cpu_count()):
+    def playGames(self, num, verbose=False, num_workers=mp.cpu_count()):
         """
         Plays num games in which player1 starts num/2 games and player2 starts
         num/2 games.
@@ -184,7 +183,8 @@ class ArenaMP(Arena):
         draws = 0
 
         with mp.Pool(processes=num_workers) as pool:
-            for gameResult in pool.imap_unordered(partial(self.playGame, self.player1, self.player2, self.game, self.display, verbose), range(num)):
+            for gameResult in pool.imap_unordered(partial(self.playGame, self.player1,
+                                                    self.player2, self.game, self.display, verbose), range(num)):
                 self.results.append(gameResult)
                 if gameResult==1:
                     oneWon+=1

@@ -10,6 +10,8 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.autograd import Variable
+import torch.multiprocessing as mp
+import threading
 
 class TicTacToeNNet(nn.Module):
     def __init__(self, game, num_channels=512, dropout=0.0):
@@ -49,5 +51,4 @@ class TicTacToeNNet(nn.Module):
 
         pi = self.fc3(s)                                                                         # batch_size x action_size
         v = self.fc4(s)                                                                          # batch_size x 1
-
         return F.log_softmax(pi, dim=1), torch.tanh(v)

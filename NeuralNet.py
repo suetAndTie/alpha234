@@ -50,3 +50,4 @@ class NeuralNet():
         """
         Set up the model for multiprocessing. (Specific for framework used)
         """
+        pass

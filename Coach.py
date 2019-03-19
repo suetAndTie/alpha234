@@ -22,6 +22,7 @@ from metric import elo
 import torch.multiprocessing as mp
 from functools import partial
 from players.NeuralNetPlayer import NNetPlayer
+import threading
 
 
 class Coach():
@@ -269,8 +270,9 @@ class CoachMP(Coach):
                 # Use processing pool to run self play episodes via mulitprocessing
                 with mp.Pool(processes=self.args.num_workers) as pool:
                     for result in tqdm(pool.imap_unordered(partial(self.executeEpisode, self.game, self.nnet, self.args), range(self.args.numEps)),
-                                       desc='MCTS.Episode', total=self.args.numEps):
+                                                           desc='MCTS.Episode', total=self.args.numEps):
                         iterationTrainExamples += result
+
 
                 # save the iteration examples to the history
                 self.trainExamplesHistory.append(iterationTrainExamples)
@@ -300,16 +302,19 @@ class CoachMP(Coach):
             for metric_opponent in self.args.metric_opponents:
                 arena = ArenaMP(NNetPlayer(self.game, self.nnet, self.args).play,
                               metric_opponent(self.game).play, self.game)
-                nwins, owins, draws = arena.playGames(self.args.metricArenaCompare)
+                nwins, owins, draws = arena.playGames(self.args.metricArenaCompare, num_workers=self.args.num_workers)
                 print('%s WINS : %d / %d ; DRAWS : %d' % (metric_opponent.__name__, nwins, owins, draws))
-                self.writer.add_scalar('{}_win'.format(metric_opponent.__name__),
-                                       float(nwins) / self.args.metricArenaCompare)
+                if nwins+owins == 0: win_prct = 0
+                else: win_prct = float(nwins) / (nwins+owins)
+                self.writer.add_scalar('{}_win'.format(metric_opponent.__name__), win_prct)
 
             print('PITTING AGAINST PREVIOUS VERSION')
             arena = ArenaMP(NNetPlayer(self.game, self.pnet, self.args).play,
                           NNetPlayer(self.game, self.nnet, self.args).play, self.game)
             pwins, nwins, draws = arena.playGames(self.args.arenaCompare, num_workers=self.args.num_workers)
-            self.writer.add_scalar('self_win', float(nwins) / self.args.arenaCompare)
+            if nwins+pwins == 0: win_prct = 0
+            else: win_prct = float(nwins) / (nwins+pwins)
+            self.writer.add_scalar('self_win', win_prct)
 
             # Calculate elo score for self play
             results = [-x for x in arena.get_results()] # flip, so nnet wins

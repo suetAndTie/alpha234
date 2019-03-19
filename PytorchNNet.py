@@ -25,6 +25,7 @@ from tqdm import tqdm
 
 from utils.util import AverageMeter
 from utils.visualization import WriterTensorboardX
+import threading
 
 class NNetWrapper(NeuralNet):
     def __init__(self, game, args, tensorboard=False):
@@ -56,9 +57,14 @@ class NNetWrapper(NeuralNet):
         # If no writer, create unusable writer
         if writer is None: writer = WriterTensorboardX(None, None, False)
 
-        for epoch in tqdm(range(self.args.epochs), desc="Training Epoch"):
+        epoch_bar = tqdm(desc="Training Epoch", total=self.args.epochs)
+        for epoch in range(self.args.epochs):
             self.nnet.train()
             scheduler.step()
+
+            pi_losses = AverageMeter()
+            v_losses = AverageMeter()
+            total_losses = AverageMeter()
 
             num_batches = int(len(examples)/self.args.batch_size)
             bar = tqdm(desc='Batch', total=num_batches)
@@ -83,6 +89,10 @@ class NNetWrapper(NeuralNet):
                 l_v = self.loss_v(target_vs, out_v)
                 total_loss = l_pi + l_v
 
+                pi_losses.update(l_pi.item(), boards.size(0))
+                v_losses.update(l_v.item(), boards.size(0))
+                total_losses.update(total_loss.item(), boards.size(0))
+
                 # record loss
                 writer.add_scalar('pi_loss', l_pi.item())
                 writer.add_scalar('v_loss', l_v.item())
@@ -105,6 +115,20 @@ class NNetWrapper(NeuralNet):
 
                 bar.update()
             bar.close()
+
+            writer.set_step((self.train_iteration * self.args.epochs) + epoch, 'train_epoch')
+            writer.add_scalar('epoch_pi_loss', pi_losses.avg)
+            writer.add_scalar('epoch_v_loss', v_losses.avg)
+            writer.add_scalar('epoch_loss', total_losses.avg)
+
+            epoch_bar.set_postfix(
+                avg_lpi=pi_losses.avg,
+                avg_lv=v_losses.avg,
+                avg_l=total_losses.avg
+            )
+            epoch_bar.update()
+
+        epoch_bar.close()
         self.train_iteration += 1
 
     def predict(self, board):
