@@ -7,7 +7,6 @@ https://github.com/suragnair/alpha-zero-general
 import numpy as np
 from functools import partial
 import torch.multiprocessing as mp
-from multiprocessing import cpu_count
 from tqdm import tqdm
 
 class Arena():
@@ -163,7 +162,7 @@ class ArenaMP(Arena):
             display(board)
         return game.getGameEnded(board, 1)
 
-    def playGames(self, num, verbose=False, num_workers=cpu_count()):
+    def playGames(self, num, verbose=False, num_workers=mp.cpu_count()):
         """
         Plays num games in which player1 starts num/2 games and player2 starts
         num/2 games.
@@ -183,34 +182,32 @@ class ArenaMP(Arena):
         twoWon = 0
         draws = 0
 
-        pool = mp.Pool(processes=num_workers)
-        for gameResult in pool.imap_unordered(partial(self.playGame, self.player1,
-                                                self.player2, self.game, self.display, verbose), range(num)):
-            self.results.append(gameResult)
-            if gameResult==1:
-                oneWon+=1
-            elif gameResult==-1:
-                twoWon+=1
-            else:
-                draws+=1
-            # bookkeeping + plot progress
-            bar.update()
+        with mp.Pool(processes=num_workers) as pool:
+            for gameResult in pool.imap_unordered(partial(self.playGame, self.player1,
+                                                    self.player2, self.game, self.display, verbose), range(num)):
+                self.results.append(gameResult)
+                if gameResult==1:
+                    oneWon+=1
+                elif gameResult==-1:
+                    twoWon+=1
+                else:
+                    draws+=1
+                # bookkeeping + plot progress
+                bar.update()
 
-        self.player1, self.player2 = self.player2, self.player1
+            self.player1, self.player2 = self.player2, self.player1
 
-        for gameResult in pool.imap_unordered(partial(self.playGame, self.player1, self.player2, self.game, self.display, verbose), range(num)):
-            # append negative result, because players switched
-            self.results.append(-gameResult)
-            if gameResult==-1:
-                oneWon+=1
-            elif gameResult==1:
-                twoWon+=1
-            else:
-                draws+=1
-            # bookkeeping + plot progress
-            bar.update()
-        pool.close()
-        pool.join()
+            for gameResult in pool.imap_unordered(partial(self.playGame, self.player1, self.player2, self.game, self.display, verbose), range(num)):
+                # append negative result, because players switched
+                self.results.append(-gameResult)
+                if gameResult==-1:
+                    oneWon+=1
+                elif gameResult==1:
+                    twoWon+=1
+                else:
+                    draws+=1
+                # bookkeeping + plot progress
+                bar.update()
 
         bar.close()
 

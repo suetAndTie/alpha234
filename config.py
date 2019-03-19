@@ -24,7 +24,7 @@ class Config():
 
     # RL Training
     numIters = 1000
-    numEps = 2
+    numEps = 100
     tempThreshold = 15
     updateThreshold = 0.6
     maxlenOfQueue = 200000
@@ -35,8 +35,7 @@ class Config():
 
 
     # Hardware
-    # num_workers = cpu_count()
-    num_workers = 2
+    num_workers = cpu_count()
     cuda = torch.cuda.is_available() # use cuda if available
 
 
@@ -47,7 +46,7 @@ class Config():
 
 
     # Model Training
-    epochs = 1 # number of epochs of train model given a single iteration
+    epochs = 10 # number of epochs of train model given a single iteration
     batch_size = 64
     lr = 0.001
     optimizer = torch.optim.Adam
@@ -71,4 +70,4 @@ class Config():
 
     # Logging
     log_dir = 'saved/runs'
-    tensorboardX = False
+    tensorboardX = True

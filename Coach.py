@@ -268,13 +268,11 @@ class CoachMP(Coach):
                 iterationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)
 
                 # Use processing pool to run self play episodes via mulitprocessing
-                # with mp.Pool(processes=self.args.num_workers) as pool:
-                pool = mp.Pool(processes=self.args.num_workers)
-                for result in tqdm(pool.imap_unordered(partial(self.executeEpisode, self.game, self.nnet, self.args), range(self.args.numEps)),
-                                                       desc='MCTS.Episode', total=self.args.numEps):
-                    iterationTrainExamples += result
-                pool.close()
-                pool.join()
+                with mp.Pool(processes=self.args.num_workers) as pool:
+                    for result in tqdm(pool.imap_unordered(partial(self.executeEpisode, self.game, self.nnet, self.args), range(self.args.numEps)),
+                                                           desc='MCTS.Episode', total=self.args.numEps):
+                        iterationTrainExamples += result
+
 
                 # save the iteration examples to the history
                 self.trainExamplesHistory.append(iterationTrainExamples)

@@ -6,6 +6,7 @@ Method to train the neural network
 from Coach import Coach, CoachMP
 from PytorchNNet import NNetWrapper
 from config import Config
+import torch.multiprocessing as mp
 
 
 def main(config):
@@ -18,8 +19,15 @@ def main(config):
     if config.load_model:
         nnet.load_checkpoint(folder=config.load_model_file[0], filename=config.load_model_file[1])
 
-    if config.use_multiprocessing: coach = CoachMP(game, nnet, config)
-    else: coach = Coach(game, nnet, config)
+    if config.use_multiprocessing:
+        # Required for multiprocessing
+        try:
+            mp.set_start_method('spawn', force=True)
+        except RuntimeError:
+            pass
+        coach = CoachMP(game, nnet, config)
+    else:
+        coach = Coach(game, nnet, config)
 
     # load training examples
     if config.load_train_examples:

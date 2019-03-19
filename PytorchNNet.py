@@ -25,6 +25,7 @@ from tqdm import tqdm
 
 from utils.util import AverageMeter
 from utils.visualization import WriterTensorboardX
+import threading
 
 class NNetWrapper(NeuralNet):
     def __init__(self, game, args, tensorboard=False):
