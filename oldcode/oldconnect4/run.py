@@ -4,7 +4,7 @@ from game import Game
 
 def main():
     # agents = [RandomAgent(), MCTSAgent(timeLimit=1000)]
-    agents = [RandomAgent(), MCTSAgent(timeLimit=1000), RandomAgent()] #curr player is either 1 or -1, so index 0 is ignored. Player at index 1 plays first
+    agents = [RandomAgent(), MCTSAgent(timeLimit=1000), MCTSAgent(timeLimit=1000)] #curr player is either 1 or -1, so index 0 is ignored. Player at index 1 plays first
     game = Game()
 
     done = False

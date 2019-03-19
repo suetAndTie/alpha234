@@ -21,4 +21,4 @@ class SinglePlayerGameState():
         return self.game.gameState._checkForEndGame()
 
     def getReward(self):
-        return self.game.currentPlayer
+        return self.game.currentPlayer*-1
