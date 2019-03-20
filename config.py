@@ -7,7 +7,8 @@ import torch
 from functools import partial
 
 # from games.connect4.Connect4Game import Connect4Game
-# from games.connect4.Connect4NNet import Connect4NNet, Connect4ResNet
+from games.connect4.Connect4NNet import Connect4NNet
+from games.connect4.ResNet import ResNet
 from games.connect4.AlphaZeroNNet import AlphaZeroNNet
 from games.othello.OthelloGame import OthelloGame
 # from games.tictactoe.TicTacToeGame import TicTacToeGame
@@ -18,9 +19,9 @@ from players.OneStepLookaheadPlayer import OneStepLookaheadPlayer
 
 class Config():
     # Overall setting
-    name = 'alpha234_othello_alphazero'
+    name = 'alpha234_othello_resnet'
     game = OthelloGame
-    nnet = AlphaZeroNNet
+    nnet = ResNet
     use_multiprocessing = True
 
 
@@ -28,7 +29,7 @@ class Config():
     numIters = 1000
     numEps = 100
     tempThreshold = 15 # 30 in paper
-    updateThreshold = 0.6 # 0.55 in AlphaGoZero, not in AlphaZero (used continuous updates, no selection)
+    updateThreshold = 0.55 # 0.55 in AlphaGoZero, not in AlphaZero (used continuous updates, no selection)
     maxlenOfQueue = 200000
     numMCTSSims = 25 # 1600 is AlphaGoZero, 800 in AlphaZero
     arenaCompare = 40 # number of games of self play to choose previous or current nnet (400 in paper)
