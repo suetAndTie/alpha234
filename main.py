@@ -25,6 +25,10 @@ def main(config):
             mp.set_start_method('spawn', force=True)
         except RuntimeError:
             pass
+        # Disable semaphore warning
+        import warnings
+        warnings.filterwarnings("ignore", message="There appear to be 1 leaked semaphores to clean up at shutdown")
+
         coach = CoachMP(game, nnet, config)
     else:
         coach = Coach(game, nnet, config)

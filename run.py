@@ -28,11 +28,11 @@ def main():
     hp = HumanConnect4Player(game).play
     mctsp = MCTSPlayer(game, config).play
     nn = NNetWrapper(game, config)
-    ckpt = ('./weights/','connect4_checkpoint_26.pth.tar')
+    ckpt = ('./weights/alpha234_connect4','connect4_best_34.pth.tar')
     nn.load_checkpoint(ckpt[0], ckpt[1])
     nnp = NNetPlayer(game, nn, config).play
 
-    arena = Arena(rp, mctsp, game, display=display)
+    arena = Arena(hp, nnp, game, display=display)
     # arena = ArenaMP(rp, rp2, game, display=display)
 
     out = arena.playGames(10, verbose=True)
