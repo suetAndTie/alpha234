@@ -43,7 +43,7 @@ class MCTSPlayer():
         args: config
     """
     def __init__(self, game, args):
-        dummynnet = NNetWrapper(game, args)
+        dummynnet = DummyNNet(game, args)
         self.mcts = MCTS(game, dummynnet, args)
 
     def play(self, x, temp=0):
