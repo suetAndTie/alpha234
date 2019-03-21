@@ -1,6 +1,5 @@
 *.pdf
 saved/
-weights/
 
 # Python General
 __pycache__/
