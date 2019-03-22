@@ -1,6 +1,6 @@
 *.pdf
 saved/
-trained/
+trained/runs/
 
 # Python General
 __pycache__/

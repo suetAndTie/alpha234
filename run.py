@@ -38,23 +38,18 @@ def main():
     nn.load_checkpoint(ckpt[0], ckpt[1])
     nnp = NNetPlayer(game, nn, c4config).play
 
-    resconfig = ResConfig()
-    resnet = NNetWrapper(game, resconfig)
-    resnetckpt = ('./trained/connect4_resnet','checkpoint_29.pth.tar')
-    resnet.load_checkpoint(resnetckpt[0], resnetckpt[1])
-    resnetp = NNetPlayer(game, resnet, resconfig).play
+    nn2 = NNetWrapper(game, c4config)
+    ckpt2 = ('./trained/connect4','connect4_checkpoint_26.pth.tar')
+    nn2.load_checkpoint(ckpt2[0], ckpt2[1])
+    nnp2 = NNetPlayer(game, nn2, c4config).play
 
-    name_list = ['rp', 'oslp', 'mctsp', 'nnp']
-    opponent_list = [rp, oslp, mctsp,nnp]
 
-    # arena = Arena(hp, rp, game, display=display)
-    # arena = ArenaMP(rp, rp2, game, display=display)
+    arena = Arena(hp, nnp2, game, display=display)
+    # arena = ArenaMP(nnp, nnp2, game, display=display)
+    # arena.playGame(verbose=True)
+    out = arena.playGames(50, verbose=False)
+    print(out)
 
-    for opponent, name in zip(opponent_list, name_list):
-        arena = ArenaMP(resnetp, opponent, game, display=display)
-        out = arena.playGames(500, verbose=False)
-        print(name)
-        print(out)
 
 if __name__ == '__main__':
     main()
