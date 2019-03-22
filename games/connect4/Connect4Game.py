@@ -6,6 +6,7 @@ https://github.com/suragnair/alpha-zero-general
 import numpy as np
 from Game import Game
 from .Connect4Logic import Board
+from termcolor import colored
 
 
 class Connect4Game(Game):
@@ -65,8 +66,38 @@ class Connect4Game(Game):
         return str(self._base_board.with_np_pieces(np_pieces=board))
 
 
+# def display(board):
+#     print(" -----------------------")
+#     print(' '.join(map(str, range(len(board[0])))))
+#     print(board)
+#     print(" -----------------------")
+
 def display(board):
-    print(" -----------------------")
-    print(' '.join(map(str, range(len(board[0])))))
-    print(board)
-    print(" -----------------------")
+    n = board.shape[0]
+    m = board.shape[1]
+
+    print("   ", end="")
+    for y in range(m):
+        print (y,"", end="")
+    print("")
+    print("  ", end="")
+    for _ in range(m):
+        print ("-", end="-")
+    print("--")
+    for y in range(n):
+        print(y, "|",end="")    # print the row #
+        for x in range(m):
+            piece = board[y][x]    # get the piece to print
+            if piece == -1: print(colored("X ", "red"),end="")
+            elif piece == 1: print(colored("O ", "green"),end="")
+            else:
+                if x==m:
+                    print("-",end="")
+                else:
+                    print("- ",end="")
+        print("|")
+
+    print("  ", end="")
+    for _ in range(m):
+        print ("-", end="-")
+    print("--")

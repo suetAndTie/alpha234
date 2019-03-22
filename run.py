@@ -47,7 +47,7 @@ def main():
     arena = Arena(hp, nnp2, game, display=display)
     # arena = ArenaMP(nnp, nnp2, game, display=display)
     # arena.playGame(verbose=True)
-    out = arena.playGames(50, verbose=False)
+    out = arena.playGames(50, verbose=True)
     print(out)
 
 
